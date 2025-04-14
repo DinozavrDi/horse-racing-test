@@ -1,74 +1,163 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { useEffect, useState } from "react";
+import Track from "@/components/track/track";
+import { Horse } from "@/types/types";
+import { useDispatch } from "react-redux";
+import { addWinner } from "@/store/slices/winners-slice";
 
 export default function HomeScreen() {
+  const [horses, setHorses] = useState<Horse[]>([
+    {
+      value: 0,
+      color: "red",
+      name: "красная",
+      isFinished: false,
+    },
+    {
+      value: 0,
+      color: "blue",
+      name: "синяя",
+      isFinished: false,
+    },
+    {
+      value: 0,
+      color: "green",
+      name: "зелёная",
+      isFinished: false,
+    },
+    {
+      value: 0,
+      color: "yellow",
+      name: "жёлтая",
+      isFinished: false,
+    },
+    {
+      value: 0,
+      color: "pink",
+      name: "розовая",
+      isFinished: false,
+    },
+  ]);
+
+  const [isResultVisiable, setIsResultVisible] = useState(false);
+  const [isFirstStart, setIsFirstStart] = useState(true);
+  const [winner, setWinner] = useState<Horse>();
+
+  const dispatch = useDispatch();
+
+  const onStartPlayHandler = () => {
+    const newHorses = horses.map((horse) => {
+      return {
+        ...horse,
+        isFinished: false,
+        value: generateNewHorseValue(),
+      };
+    });
+
+    console.log(newHorses);
+    setWinner(findWinner(newHorses));
+    setIsFirstStart(false);
+    setHorses(newHorses);
+    setIsResultVisible(false);
+  };
+
+  const onFinishHandler = async () => {
+    setIsResultVisible(true);
+
+    dispatch(addWinner(winner!));
+  };
+
+  useEffect(() => {
+    if (horses.every((horse) => horse.isFinished && !isFirstStart)) {
+      onFinishHandler();
+    }
+  }, [horses]);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <Track horseID={0} setHorses={setHorses} horses={horses} />
+      <Track horseID={1} setHorses={setHorses} horses={horses} />
+      <Track horseID={2} setHorses={setHorses} horses={horses} />
+      <Track horseID={3} setHorses={setHorses} horses={horses} />
+      <Track horseID={4} setHorses={setHorses} horses={horses} />
+      <Text
+        style={[
+          styles.winnerText,
+          { display: isResultVisiable ? "flex" : "none" },
+        ]}
+      >
+        Победила {winner?.name} лошадь{" "}
+      </Text>
+      <Pressable
+        onPress={onStartPlayHandler}
+        style={[
+          styles.startButton,
+          { display: isResultVisiable || isFirstStart ? "flex" : "none" },
+        ]}
+      >
+        <Text style={styles.startButtonText}>
+          {isFirstStart ? "Начать" : "Рестарт"}
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "black",
+    gap: 10,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  startButton: {
+    width: 140,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#D47A21",
+    fontFamily: "SpaceMono",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  startButtonText: {
+    color: "white",
+    fontSize: 24,
+    fontFamily: "Rubik",
+    fontWeight: "bold",
+    textShadowColor: "rgba(0, 0, 0, 0.75)",
+    textShadowOffset: { width: 1, height: 1 },
+  },
+  resultsModal: {
+    padding: 20,
+    width: "100%",
+    height: "90%",
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  winnerText: {
+    fontSize: 24,
+    marginBottom: 20,
+    fontFamily: "Rubik",
+    fontWeight: "bold",
+    color: "white",
   },
 });
+
+function generateNewHorseValue(): number {
+  return Math.floor(Math.random() * (100 - 50 + 1)) + 50;
+}
+
+function findWinner(horses: Horse[]): Horse {
+  let winner = horses[0];
+  for (let i = 1; i < horses.length; i++) {
+    if (horses[i].value < winner.value) {
+      winner = horses[i];
+    }
+  }
+  return winner;
+}
